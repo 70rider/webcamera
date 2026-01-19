@@ -5,64 +5,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Camera Guide App</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-        .container { position: relative; width: 100vw; height: 100vh; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; text-align: center; }
+        .container { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
         
-        /* カメラ映像 */
         video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* ガイド画像（PNG/GIFを重ねる層） */
+        /* ガイド画像 */
         .guide-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%; /* サイズはここで調整 */
-            pointer-events: none; /* 下の操作を邪魔しない */
-            opacity: 0.6; /* 透かし具合 */
+            width: 80%;
+            pointer-events: none;
+            opacity: 0.6;
         }
 
-        /* 案内文字 */
-        .message {
+        /* シャッターボタンのデザイン */
+        .shutter-btn {
             position: absolute;
-            top: 20px;
-            width: 100%;
-            text-align: center;
-            color: white;
-            background: rgba(0,0,0,0.5);
-            padding: 10px 0;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            background: white;
+            border-radius: 50%;
+            border: 5px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            cursor: pointer;
         }
+        .shutter-btn:active { background: #ccc; }
+
+        /* 隠しキャンバス（保存用） */
+        canvas { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="message">ガイドに合わせて撮影してください</div>
-    
     <video id="video" autoplay playsinline></video>
+    <img id="guide" class="guide-overlay" src="AA.png" alt="Guide">
     
-    <img class="guide-overlay" src="AA.png" alt="Guide">
+    <div id="shutter" class="shutter-btn"></div>
 </div>
+
+<canvas id="canvas"></canvas>
 
 <script>
     const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const shutter = document.getElementById('shutter');
+    const guide = document.getElementById('guide');
 
     // カメラ起動
     navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }, // 背面カメラ
+        video: { facingMode: "environment" },
         audio: false
     })
-    .then(stream => {
-        video.srcObject = stream;
-    })
-    .catch(err => {
-        console.error("Camera Error:", err);
-        alert("カメラの起動に失敗しました。HTTPS環境か確認してください。");
+    .then(stream => { video.srcObject = stream; })
+    .catch(err => { alert("カメラの起動に失敗しました。"); });
+
+    // シャッターボタンが押された時の処理
+    shutter.addEventListener('click', () => {
+        const ctx = canvas.getContext('2d');
+        
+        // カメラの解像度に合わせてキャンバスのサイズを設定
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // 1. カメラ映像を描画
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // 2. ガイド画像を重ねて描画
+        // (CSSの80%幅に合わせて計算)
+        const guideWidth = canvas.width * 0.8;
+        const guideHeight = guide.naturalHeight * (guideWidth / guide.naturalWidth);
+        const x = (canvas.width - guideWidth) / 2;
+        const y = (canvas.height - guideHeight) / 2;
+        
+        ctx.globalAlpha = 0.6; // ガイドの透明度
+        ctx.drawImage(guide, x, y, guideWidth, guideHeight);
+        ctx.globalAlpha = 1.0;
+
+        // 3. 画像としてダウンロード（または表示）
+        const link = document.createElement('a');
+        link.download = `photo_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
     });
 </script>
 
 </body>
-
 </html>
-
-
