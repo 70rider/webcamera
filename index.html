@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Camera Guide App</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        .container { position: relative; width: 100vw; height: 100vh; }
+        
+        /* カメラ映像 */
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ガイド画像（PNG/GIFを重ねる層） */
+        .guide-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; /* サイズはここで調整 */
+            pointer-events: none; /* 下の操作を邪魔しない */
+            opacity: 0.6; /* 透かし具合 */
+        }
+
+        /* 案内文字 */
+        .message {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="message">ガイドに合わせて撮影してください</div>
+    
+    <video id="video" autoplay playsinline></video>
+    
+    <img class="guide-overlay" src="https://drive.google.com/uc?export=view&id=ここにファイルIDを入れる" alt="Guide">
+</div>
+
+<script>
+    const video = document.getElementById('video');
+
+    // カメラ起動
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }, // 背面カメラ
+        audio: false
+    })
+    .then(stream => {
+        video.srcObject = stream;
+    })
+    .catch(err => {
+        console.error("Camera Error:", err);
+        alert("カメラの起動に失敗しました。HTTPS環境か確認してください。");
+    });
+</script>
+
+</body>
+</html>
